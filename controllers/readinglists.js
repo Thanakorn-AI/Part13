@@ -5,12 +5,20 @@ const { tokenExtractor } = require('../util/middleware');
 
 router.post('/', async (req, res) => {
   console.log('Adding to reading list:', req.body);
-  const readingListEntry = await ReadingList.create({
-    userId: req.body.userId,
-    blogId: req.body.blogId
-  });
-  console.log('Reading list entry created:', readingListEntry.id);
-  res.json(readingListEntry);
+  try {
+    const readingListEntry = await ReadingList.create({
+      userId: req.body.userId,
+      blogId: req.body.blogId
+    });
+    console.log('Reading list entry created:', readingListEntry.id);
+    res.json(readingListEntry);
+  } catch (error) {
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({ error: 'Blog already in reading list' });
+    }
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Something went wrong' });
+  }
 });
 
 router.put('/:id', tokenExtractor, async (req, res) => {
