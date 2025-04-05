@@ -24,11 +24,29 @@ Blog.init({
   likes: {
     type: DataTypes.INTEGER,
     defaultValue: 0
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: { model: 'users', key: 'id' }
+  },
+  year: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    validate: {
+      min: 1991,
+      max: new Date().getFullYear(),
+      isValid(value) {
+        if (value !== null && (value < 1991 || value > new Date().getFullYear())) {
+          throw new Error(`Year must be between 1991 and ${new Date().getFullYear()}`);
+        }
+      }
+    }
   }
 }, {
   sequelize,
   underscored: true,
-  timestamps: false,
+  timestamps: true,
   modelName: 'blog'
 });
 

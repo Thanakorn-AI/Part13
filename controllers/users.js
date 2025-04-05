@@ -10,6 +10,39 @@ router.get('/', async (req, res) => {
   res.json(users);
 });
 
+router.get('/:id', async (req, res) => {
+  const where = {};
+  if (req.query.read === 'true') where.read = true;
+  if (req.query.read === 'false') where.read = false;
+
+  const user = await User.findByPk(req.params.id, {
+    include: {
+      model: Blog,
+      as: 'reading_blogs',
+      attributes: ['id', 'url', 'title', 'author', 'likes', 'year'],
+      through: { attributes: ['read', 'id'], where }
+    }
+  });
+  if (user) {
+    const readings = user.reading_blogs.map(blog => ({
+      id: blog.id,
+      url: blog.url,
+      title: blog.title,
+      author: blog.author,
+      likes: blog.likes,
+      year: blog.year,
+      readinglists: [{ read: blog.reading_list.read, id: blog.reading_list.id }]
+    }));
+    res.json({
+      name: user.name,
+      username: user.username,
+      readings
+    });
+  } else {
+    res.status(404).end();
+  }
+});
+
 router.post('/', async (req, res) => {
   console.log('Creating user with data:', req.body);
   const user = await User.create(req.body);

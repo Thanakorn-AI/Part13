@@ -1,18 +1,31 @@
 // Part13/util/db.js
 const Sequelize = require('sequelize');
 const { DATABASE_URL } = require('./config');
+const { Umzug, SequelizeStorage } = require('umzug');
 
 const sequelize = new Sequelize(DATABASE_URL, {
-  dialectOptions: {
-    ssl: false // Match your current setup for Fly.io
-  },
-  logging: console.log // Keep your debugging logs
+  dialectOptions: { ssl: false },
+  logging: console.log
 });
+
+const runMigrations = async () => {
+  const migrator = new Umzug({
+    migrations: { glob: 'migrations/*.js' },
+    storage: new SequelizeStorage({ sequelize, tableName: 'migrations' }),
+    context: sequelize.getQueryInterface(),
+    logger: console
+  });
+  const migrations = await migrator.up();
+  console.log('Migrations up to date', {
+    files: migrations.map(mig => mig.name)
+  });
+};
 
 const connectToDatabase = async () => {
   try {
-    console.log('Testing database connection...'); // Match your style
+    console.log('Testing database connection...');
     await sequelize.authenticate();
+    await runMigrations();
     console.log('Database connection successful!');
   } catch (err) {
     console.error('Failed to connect to the database:', err);
